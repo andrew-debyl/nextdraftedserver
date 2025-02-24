@@ -1,5 +1,0 @@
-runtime: nodejs20
-env_variables:
-  MYSQL_USER: root
-  MYSQL_PASSWORD: h&94hkhf795Jhf7*
-  MYSQL_DB: athlete_portfolio
