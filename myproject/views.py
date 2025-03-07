@@ -5,6 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 import logging
 from django.contrib.auth.models import User
 from django.contrib.auth import logout
+from myproject.models import Athlete, Recruiter
 
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ def login_user(request):
         login(request, user)
         data = {"username": username, "status": "Authenticated"}
     return JsonResponse(data)
+
 
 @csrf_exempt
 def signup_user(request):
@@ -50,7 +52,36 @@ def signup_user(request):
         data = {"username": username, "status": "User already exists"}
         return JsonResponse(data)
     
+
 def logout_request(request):
     logout(request)
     data = {"username":""}
     return JsonResponse(data)
+
+
+@csrf_exempt
+def create_role(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        username = data.get('username')
+        role = data.get('role')
+
+        # Check if the user exists
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return JsonResponse({"status": False, "error": "User not found"})
+
+        # Create role-specific profile
+        if role == 'athlete':
+            athlete = Athlete.objects.create(user=user)
+            # You can add more data for the athlete here if needed
+            athlete.save()
+        elif role == 'recruiter':
+            recruiter = Recruiter.objects.create(user=user)
+            # You can add more data for the recruiter here if needed
+            recruiter.save()
+
+        return JsonResponse({"status": True})
+
+    return JsonResponse({"status": False, "error": "Invalid request"})
