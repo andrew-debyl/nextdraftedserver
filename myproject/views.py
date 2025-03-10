@@ -85,3 +85,42 @@ def create_role(request):
         return JsonResponse({"status": True})
 
     return JsonResponse({"status": False, "error": "Invalid request"})
+
+
+def get_profile(request, username):
+    try:
+        user = User.objects.get(username=username)
+
+        # Check if the user is an athlete
+        try:
+            athlete = Athlete.objects.get(user=user)
+            profile_data = {
+                "username": user.username,
+                "first_name": athlete.first_name,
+                "last_name": athlete.last_name,
+                "sport": athlete.sport,
+                "height": athlete.height,
+                "weight": athlete.weight,
+                "bio": athlete.bio,
+                "location": athlete.location,
+            }
+            return JsonResponse(profile_data)
+        except Athlete.DoesNotExist:
+            pass  # User is not an athlete, check for recruiter
+
+        # Check if the user is a recruiter
+        try:
+            recruiter = Recruiter.objects.get(user=user)
+            profile_data = {
+                "username": user.username,
+                "company_name": recruiter.company_name,
+                "job_title": recruiter.job_title,
+            }
+            return JsonResponse(profile_data)
+        except Recruiter.DoesNotExist:
+            pass  # User is neither athlete nor recruiter
+
+        return JsonResponse({"error": "Profile not found"}, status=404)
+
+    except User.DoesNotExist:
+        return JsonResponse({"error": "User not found"}, status=404)
