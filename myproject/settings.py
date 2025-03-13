@@ -31,15 +31,16 @@ SECRET_KEY = 'django-insecure-adx&sb^)(4nu^73_hus5a+gmz_*jw+ub+%hok^39slbr8t4oy%
 DEBUG = True
 
 ALLOWED_HOSTS = []
+ 
 
-
-CORS_ALLOW_ALL_ORIGINS = True  
-CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',  # Add the frontend URL
     'https://localhost:5173',
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+]
 
 # Application definition
 
@@ -52,13 +53,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'myproject',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -92,14 +94,13 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # MySQL backend for Django
-        'NAME': os.getenv('DB_NAME'),          # Database name from .env
-        'USER': os.getenv('DB_USER'),          # Database user from .env
-        'PASSWORD': os.getenv('DB_PASSWORD'),  # Database password from .env
+        'NAME': 'athlete_portfolio',          # Database name from .env
+        'USER': 'root',          # Database user from .env
+        'PASSWORD': 'h&94hkhf795Jhf7*',  # Database password from .env
         'HOST': 'localhost',                  # Database host (can change if you're using remote DB)
         'PORT': '3306',                       # Default MySQL port (can change if different)
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -141,9 +142,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-#CHANGE IN PRODUCTION
-CORS_ALLOW_ALL_ORIGINS = True
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

@@ -6,22 +6,25 @@ import logging
 from django.contrib.auth.models import User
 from django.contrib.auth import logout
 from myproject.models import Athlete, Recruiter
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from .serializers import AthleteSerializer, RecruiterSerializer
+from django.shortcuts import get_object_or_404
 
 
 logger = logging.getLogger(__name__)
 
-
 @csrf_exempt
 def login_user(request):
-    # Get username and password from request.POST dictionary
     data = json.loads(request.body)
     username = data['username']
     password = data['password']
-    # Try to check if provide credential can be authenticated
+    
     user = authenticate(username=username, password=password)
     data = {"username": username}
+
     if user is not None:
-        # If user is valid, call login method to login current user
         login(request, user)
 
         if Athlete.objects.filter(user=user).exists():
@@ -88,43 +91,17 @@ def create_role(request):
 
 def get_profile(request, username):
     try:
-        user = User.objects.get(username=username)
+        user = get_object_or_404(User, username=username)
 
-        try:
-            athlete = Athlete.objects.get(user=user)
-            profile_data = {
-                "username": user.username,
-                "first_name": athlete.first_name,
-                "last_name": athlete.last_name,
-                "sport": athlete.sport,
-                "height": athlete.height,
-                "weight": athlete.weight,
-                "bio": athlete.bio,
-                "location": athlete.location,
-                "gender": athlete.gender,
-                #"profile_picture": athlete.profile_picture.url if athlete.profile_picture else None
-            }
-            return JsonResponse(profile_data)
-        except Athlete.DoesNotExist:
-            pass
+        if hasattr(user, 'athlete'):
+            athlete = user.athlete
+            serializer = AthleteSerializer(athlete)
+            return JsonResponse(serializer.data)
 
-        try:
-            recruiter = Recruiter.objects.get(user=user)
-            profile_data = {
-                "username": user.username,
-                "first_name": recruiter.first_name,
-                "last_name": recruiter.last_name,
-                "organization": recruiter.organization,
-                "title": recruiter.title,
-                "bio": recruiter.bio,
-                "location": recruiter.location,
-                "sport": recruiter.sport,
-                "gender": recruiter.gender,
-                #"profile_picture": recruiter.profile_picture.url if recruiter.profile_picture else None
-            }
-            return JsonResponse(profile_data)
-        except Recruiter.DoesNotExist:
-            pass
+        elif hasattr(user, 'recruiter'):
+            recruiter = user.recruiter
+            serializer = RecruiterSerializer(recruiter) 
+            return JsonResponse(serializer.data)
 
         return JsonResponse({"error": "Profile not found"}, status=404)
 
@@ -132,49 +109,48 @@ def get_profile(request, username):
         return JsonResponse({"error": "User not found"}, status=404)
 
 
-@csrf_exempt
-def update_profile (request, username):
-    try:
-        data = json.loads(request.body)
-        user = User.objects.get(username=username)
+class ProfileUpdateView(APIView):
+    def put(self, request, username):
+        user = get_object_or_404(User, username=username)
 
         try:
             athlete = Athlete.objects.get(user=user)
+            data = request.data.copy()
 
-            athlete.first_name = data.get('first_name', athlete.first_name)
-            athlete.last_name = data.get('last_name', athlete.last_name)
-            athlete.sport = data.get('sport', athlete.sport)
-            athlete.height = data.get('height', athlete.height)
-            athlete.weight = data.get('weight', athlete.weight)
-            athlete.bio = data.get('bio', athlete.bio)
-            athlete.location = data.get('location', athlete.location)
-            athlete.gender = data.get('gender', athlete.gender)
-            athlete.save()
+            if 'profile_picture' in request.FILES:
+                # A file was uploaded, let the serializer handle it
+                pass
+            elif data.get('profile_picture') == 'null':
+                # No file uploaded, and 'null' was sent, keep the existing picture
+                data.pop('profile_picture') # remove profile_picture from data, so the serializer doesn't change it.
 
-            return JsonResponse({'message': 'Profile updated successfully'}, status=200)
+            athlete_serializer = AthleteSerializer(athlete, data=data, partial=True)
+
+            if athlete_serializer.is_valid():
+                athlete_serializer.save()
+                return Response({"message": "Athlete profile updated successfully"}, status=status.HTTP_200_OK)
+            else:
+                print(f"Serializer errors for {username}: {athlete_serializer.errors}")
+                return Response(athlete_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         except Athlete.DoesNotExist:
             try:
                 recruiter = Recruiter.objects.get(user=user)
+                data = request.data.copy()
 
-                recruiter.first_name = data.get('first_name', recruiter.first_name)
-                recruiter.last_name = data.get('last_name', recruiter.last_name)
-                recruiter.organization = data.get('organization', recruiter.organization)
-                recruiter.title = data.get('title', recruiter.title)
-                recruiter.bio = data.get('bio', recruiter.bio)
-                recruiter.location = data.get('location', recruiter.location)
-                recruiter.sport = data.get('sport', recruiter.sport)
-                athlete.gender = data.get('gender', athlete.gender)
-                recruiter.save()
+                if 'profile_picture' in request.FILES:
+                    pass
+                elif data.get('profile_picture') == 'null':
+                    data.pop('profile_picture')
 
-                return JsonResponse({'message': 'Profile updated successfully'}, status=200)
+                recruiter_serializer = RecruiterSerializer(recruiter, data=data, partial=True)
+
+                if recruiter_serializer.is_valid():
+                    recruiter_serializer.save()
+                    return Response({"message": "Recruiter profile updated successfully"}, status=status.HTTP_200_OK)
+                else:
+                    print(f"Serializer errors for {username}: {recruiter_serializer.errors}")
+                    return Response(recruiter_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
             except Recruiter.DoesNotExist:
-                return JsonResponse({"error": "User is neither athlete nor recruiter"}, status=404)
-
-    except User.DoesNotExist:
-        return JsonResponse({"error": "User not found"}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=400)
+                return Response({"error": "User is neither an athlete nor a recruiter"}, status=status.HTTP_404_NOT_FOUND)

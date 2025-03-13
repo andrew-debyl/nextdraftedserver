@@ -26,7 +26,13 @@ class Athlete(models.Model):
     location = models.CharField(max_length=100, blank=True, null=True)
     gender = models.CharField(max_length=15, choices=GENDER_CHOICES, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='athletes/', null=True, blank=True)
-    #CONTACT AND SOCIAL MEDIA
+    birth_date = models.DateField(null=True, blank=True)
+    email = models.EmailField(unique=True, blank=True, null=True)  # Unique but optional
+    phone_number = models.CharField(max_length=15, blank=True, null=True)  # Optional
+    instagram = models.URLField(blank=True, null=True)
+    linkedin = models.URLField(blank=True, null=True)
+    youtube = models.URLField(blank=True, null=True)
+    facebook = models.URLField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}'s Profile"
@@ -48,7 +54,12 @@ class Recruiter(models.Model):
     sport = models.CharField(max_length=100, blank=True, null=True)
     gender = models.CharField(max_length=15, choices=GENDER_CHOICES, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='recruiters/', null=True, blank=True)
-    #CONTACT METHODS
+    email = models.EmailField(unique=True, blank=True, null=True)  # Unique but optional
+    phone_number = models.CharField(max_length=15, blank=True, null=True)  # Optional
+    instagram = models.URLField(blank=True, null=True)
+    linkedin = models.URLField(blank=True, null=True)
+    youtube = models.URLField(blank=True, null=True)
+    facebook = models.URLField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}'s Profile"
