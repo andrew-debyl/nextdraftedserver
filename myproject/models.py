@@ -7,6 +7,7 @@ except Exception:
     sys.exit()
 
 from django.contrib.auth.models import User
+import json
 
 # Create your models here.
 class Athlete(models.Model):
@@ -63,3 +64,49 @@ class Recruiter(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}'s Profile"
+    
+
+class SportPortfolio(models.Model):
+    athlete = models.ForeignKey(Athlete, on_delete=models.CASCADE, related_name='sport_portfolios')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    sport = models.CharField(max_length=100)
+    position = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    portfolio_image = models.ImageField(upload_to='portfolio_images/', null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.athlete.first_name} {self.athlete.last_name} ({self.sport})"
+    
+
+class SportPortfolioItem(models.Model):
+    CATEGORY_CHOICES = [
+        ('about', 'About Me'),
+        ('stats', 'Stats'),
+        ('media', 'Media Gallery'),
+        ('metrics', 'Performance Metrics'),
+        ('contact', 'Contact'),
+        ('text', 'Text'),
+        ('image', 'Image'),
+        ('video', 'Video'),
+        # Add more item types as needed
+    ]
+
+    sport_portfolio = models.ForeignKey(SportPortfolio, on_delete=models.CASCADE, related_name='items')
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    title = models.CharField(max_length=200, blank=True, null=True)
+    data = models.TextField(blank=True, null=True) 
+    image = models.ImageField(upload_to='portfolio_items/', null=True, blank=True)
+    order = models.IntegerField(default=0)
+
+    def get_data_as_dict(self):
+        if self.data:
+            try:
+                return json.loads(self.data)
+            except json.JSONDecodeError:
+                return None
+        return None
+
+    def __str__(self):
+        return f"{self.title} ({self.category})" if self.title else f"{self.category}"
