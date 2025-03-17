@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Athlete, Recruiter
+from .models import Athlete, Recruiter, SportPortfolio, SportPortfolioItem
+import json
 
 class AthleteSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(allow_blank=True, allow_null=True)
@@ -24,3 +25,26 @@ class RecruiterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recruiter
         fields = ['first_name', 'last_name', 'organization', 'title', 'bio', 'location', 'sport', 'gender', 'profile_picture', 'email', 'phone_number', 'instagram', 'linkedin', 'youtube', 'facebook']
+
+
+class SportPortfolioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SportPortfolio
+        fields = ['id', 'athlete', 'title', 'description', 'sport', 'team', 'position', 'created_at', 'updated_at', 'portfolio_image']
+
+
+class SportPortfolioItemSerializer(serializers.ModelSerializer):
+    data = serializers.JSONField(required=False) # Important for handling JSON data
+
+    class Meta:
+        model = SportPortfolioItem
+        fields = ['id', 'sport_portfolio', 'category', 'title', 'data', 'image', 'order']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.category == 'video' and instance.data:
+            try:
+                representation['data'] = json.loads(instance.data)
+            except json.JSONDecodeError:
+                pass
+        return representation

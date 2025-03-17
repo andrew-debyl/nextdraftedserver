@@ -5,11 +5,11 @@ from django.views.decorators.csrf import csrf_exempt
 import logging
 from django.contrib.auth.models import User
 from django.contrib.auth import logout
-from myproject.models import Athlete, Recruiter
+from myproject.models import Athlete, Recruiter, SportPortfolio, SportPortfolioItem
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .serializers import AthleteSerializer, RecruiterSerializer
+from .serializers import AthleteSerializer, RecruiterSerializer, SportPortfolioSerializer, SportPortfolioItemSerializer
 from django.shortcuts import get_object_or_404
 
 
@@ -154,3 +154,58 @@ class ProfileUpdateView(APIView):
 
             except Recruiter.DoesNotExist:
                 return Response({"error": "User is neither an athlete nor a recruiter"}, status=status.HTTP_404_NOT_FOUND)
+            
+
+def get_portfolios(request, username):
+    try:
+        user = get_object_or_404(User, username=username)
+
+        if hasattr(user, 'athlete'):
+            athlete = user.athlete
+            portfolios = SportPortfolio.objects.filter(athlete=athlete)
+            serializer = SportPortfolioSerializer(portfolios, many=True) # Serialize a list
+            data = serializer.data
+            return JsonResponse({
+                'first_name': athlete.first_name,
+                'last_name': athlete.last_name,
+                'portfolios': data,
+            }, safe=False)
+
+        elif hasattr(user, 'recruiter'):
+            # Recruiters don't have SportPortfolios, so return an empty list or an error
+            return JsonResponse([], safe=False) # Or: return JsonResponse({"error": "Recruiters do not have portfolios."}, status=400)
+
+        return JsonResponse({"error": "Profile not found"}, status=404)
+
+    except User.DoesNotExist:
+        return JsonResponse({"error": "User not found"}, status=404)
+    
+
+
+def get_portfolio(request, username, portfolioId):
+    try:
+        user = get_object_or_404(User, username=username)
+
+        if hasattr(user, 'athlete'):
+            athlete = user.athlete
+            portfolio = get_object_or_404(SportPortfolio, athlete=athlete, id=portfolioId)
+            serializer = SportPortfolioSerializer(portfolio)
+            portfolio_data = serializer.data
+
+            items = SportPortfolioItem.objects.filter(sport_portfolio=portfolio).order_by('order')
+            item_serializer = SportPortfolioItemSerializer(items, many=True)
+            item_data = item_serializer.data
+
+            return JsonResponse({
+                'first_name': athlete.first_name,
+                'last_name': athlete.last_name,
+                'portfolios': portfolio_data,
+                'items': item_data,
+            }, safe=False)
+        elif hasattr(user, 'recruiter'):
+            return JsonResponse([], safe=False)
+
+        return JsonResponse({"error": "Profile not found"}, status=404)
+
+    except User.DoesNotExist:
+        return JsonResponse({"error": "User not found"}, status=404)

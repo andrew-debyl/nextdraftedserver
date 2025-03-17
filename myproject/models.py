@@ -68,13 +68,15 @@ class Recruiter(models.Model):
 
 class SportPortfolio(models.Model):
     athlete = models.ForeignKey(Athlete, on_delete=models.CASCADE, related_name='sport_portfolios')
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    sport = models.CharField(max_length=100)
+    sport = models.CharField(max_length=100, blank=True, null=True)
+    team = models.CharField(max_length=100, blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     portfolio_image = models.ImageField(upload_to='portfolio_images/', null=True, blank=True)
+    #contact
 
     def __str__(self):
         return f"{self.title} - {self.athlete.first_name} {self.athlete.last_name} ({self.sport})"
@@ -82,15 +84,10 @@ class SportPortfolio(models.Model):
 
 class SportPortfolioItem(models.Model):
     CATEGORY_CHOICES = [
-        ('about', 'About Me'),
         ('stats', 'Stats'),
-        ('media', 'Media Gallery'),
         ('metrics', 'Performance Metrics'),
-        ('contact', 'Contact'),
-        ('text', 'Text'),
-        ('image', 'Image'),
+        ('image', 'Image Gallery'),
         ('video', 'Video'),
-        # Add more item types as needed
     ]
 
     sport_portfolio = models.ForeignKey(SportPortfolio, on_delete=models.CASCADE, related_name='items')
