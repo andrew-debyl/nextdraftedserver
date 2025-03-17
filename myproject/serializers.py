@@ -30,7 +30,7 @@ class RecruiterSerializer(serializers.ModelSerializer):
 class SportPortfolioSerializer(serializers.ModelSerializer):
     class Meta:
         model = SportPortfolio
-        fields = ['id', 'athlete', 'title', 'description', 'sport', 'team', 'position', 'created_at', 'updated_at', 'portfolio_image']
+        fields = ['id', 'athlete', 'title', 'description', 'sport', 'team', 'position', 'created_at', 'updated_at', 'portfolio_image', 'email', 'phone_number', 'instagram', 'linkedin', 'youtube', 'facebook']
 
 
 class SportPortfolioItemSerializer(serializers.ModelSerializer):

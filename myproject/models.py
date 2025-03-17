@@ -28,8 +28,8 @@ class Athlete(models.Model):
     gender = models.CharField(max_length=15, choices=GENDER_CHOICES, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='athletes/', null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
-    email = models.EmailField(unique=True, blank=True, null=True)  # Unique but optional
-    phone_number = models.CharField(max_length=15, blank=True, null=True)  # Optional
+    email = models.EmailField(blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
     instagram = models.URLField(blank=True, null=True)
     linkedin = models.URLField(blank=True, null=True)
     youtube = models.URLField(blank=True, null=True)
@@ -55,8 +55,8 @@ class Recruiter(models.Model):
     sport = models.CharField(max_length=100, blank=True, null=True)
     gender = models.CharField(max_length=15, choices=GENDER_CHOICES, blank=True, null=True)
     profile_picture = models.ImageField(upload_to='recruiters/', null=True, blank=True)
-    email = models.EmailField(unique=True, blank=True, null=True)  # Unique but optional
-    phone_number = models.CharField(max_length=15, blank=True, null=True)  # Optional
+    email = models.EmailField(blank=True, null=True) 
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
     instagram = models.URLField(blank=True, null=True)
     linkedin = models.URLField(blank=True, null=True)
     youtube = models.URLField(blank=True, null=True)
@@ -76,7 +76,12 @@ class SportPortfolio(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     portfolio_image = models.ImageField(upload_to='portfolio_images/', null=True, blank=True)
-    #contact
+    email = models.EmailField(blank=True, null=True) 
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    instagram = models.URLField(blank=True, null=True)
+    linkedin = models.URLField(blank=True, null=True)
+    youtube = models.URLField(blank=True, null=True)
+    facebook = models.URLField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.title} - {self.athlete.first_name} {self.athlete.last_name} ({self.sport})"

@@ -209,3 +209,70 @@ def get_portfolio(request, username, portfolioId):
 
     except User.DoesNotExist:
         return JsonResponse({"error": "User not found"}, status=404)
+    
+
+class PortfolioUpdateView(APIView):
+    def put(self, request, username, portfolioId):
+        user = get_object_or_404(User, username=username)
+
+        try:
+            athlete = Athlete.objects.get(user=user)
+            portfolio = get_object_or_404(SportPortfolio, athlete=athlete, id=portfolioId)
+            data = request.data.copy()
+
+            if 'portfolio_image' in request.FILES:
+                # A file was uploaded, let the serializer handle it
+                pass
+            elif data.get('portfolio_image') == 'null':
+                # No file uploaded, and 'null' was sent, keep the existing picture
+                data.pop('portfolio_image')
+
+            serializer = SportPortfolioSerializer(portfolio, data=data, partial=True)
+
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": "Athlete portfolio updated successfully"}, status=status.HTTP_200_OK)
+            else:
+                print(f"Serializer errors for {username}: {serializer.errors}")
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except Athlete.DoesNotExist:
+            return Response({"error": "User is not an athlete"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class PortfolioItemPostView(APIView):
+    def post(self, request, username, portfolioId):
+        user = get_object_or_404(User, username=username)
+        athlete = get_object_or_404(Athlete, user=user)
+        portfolio = get_object_or_404(SportPortfolio, athlete=athlete, id=portfolioId)
+        data = request.data.copy()
+        data['sport_portfolio'] = portfolio.id  # Associate the new item with the portfolio
+        serializer = SportPortfolioItemSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class PortfolioItemUpdateView(APIView):
+    def get_item(self, username, portfolioId, item_id):
+        user = get_object_or_404(User, username=username)
+        athlete = get_object_or_404(Athlete, user=user)
+        portfolio = get_object_or_404(SportPortfolio, athlete=athlete, id=portfolioId)
+        item = get_object_or_404(SportPortfolioItem, sport_portfolio=portfolio, id=item_id)
+        return item
+
+    def put(self, request, username, portfolioId, item_id):
+        item = self.get_item(username, portfolioId, item_id)
+        serializer = SportPortfolioItemSerializer(item, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, username, portfolioId, item_id):
+        item = self.get_item(username, portfolioId, item_id)
+        item.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
