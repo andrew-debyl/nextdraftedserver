@@ -39,12 +39,3 @@ class SportPortfolioItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = SportPortfolioItem
         fields = ['id', 'sport_portfolio', 'category', 'title', 'data', 'image', 'order']
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        if instance.category == 'video' and instance.data:
-            try:
-                representation['data'] = json.loads(instance.data)
-            except json.JSONDecodeError:
-                pass
-        return representation
