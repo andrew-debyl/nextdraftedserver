@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import AthleteSerializer, RecruiterSerializer, SportPortfolioSerializer, SportPortfolioItemSerializer
 from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view
 
 
 logger = logging.getLogger(__name__)
@@ -169,6 +170,7 @@ def get_portfolios(request, username):
                 'first_name': athlete.first_name,
                 'last_name': athlete.last_name,
                 'portfolios': data,
+                'id': athlete.id,
             }, safe=False)
 
         elif hasattr(user, 'recruiter'):
@@ -180,6 +182,43 @@ def get_portfolios(request, username):
     except User.DoesNotExist:
         return JsonResponse({"error": "User not found"}, status=404)
     
+
+
+@csrf_exempt
+@api_view(['POST'])
+def add_portfolios(request, username):
+    user = get_object_or_404(User, username=username)
+    
+    if not hasattr(user, 'athlete'):
+        return JsonResponse({"error": "User is not an athlete"}, status=400) 
+    
+    athlete = user.athlete
+    serializer = SportPortfolioSerializer(data=request.data)
+
+    if serializer.is_valid():
+        serializer.save(athlete=athlete)
+        return JsonResponse(serializer.data, status=201) 
+    return JsonResponse(serializer.errors, status=400)
+
+
+
+class PortfolioDeleteView(APIView):
+    def delete(self, request, username, portfolioId):
+        user = get_object_or_404(User, username=username)
+
+        try:
+            athlete = Athlete.objects.get(user=user)
+        except Athlete.DoesNotExist:
+            return Response({"error": "User is not an athlete"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            portfolio = SportPortfolio.objects.get(athlete=athlete, id=portfolioId)
+        except SportPortfolio.DoesNotExist:
+            return Response({"error": "Portfolio not found or does not belong to this athlete"}, status=status.HTTP_404_NOT_FOUND)
+
+        portfolio.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 def get_portfolio(request, username, portfolioId):
@@ -209,7 +248,8 @@ def get_portfolio(request, username, portfolioId):
 
     except User.DoesNotExist:
         return JsonResponse({"error": "User not found"}, status=404)
-    
+
+
 
 class PortfolioUpdateView(APIView):
     def put(self, request, username, portfolioId):
